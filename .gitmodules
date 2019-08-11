@@ -1,0 +1,12 @@
+[submodule "cpu/riscv"]
+	path = cpu/riscv
+	url = https://github.com/ultraembedded/riscv
+[submodule "cpu/cortex_m0"]
+	path = cpu/cortex_m0
+	url = https://github.com/ultraembedded/cortex_m0_wrapper
+[submodule "soc/dbg_bridge"]
+	path = soc/dbg_bridge
+	url = https://github.com/ultraembedded/core_dbg_bridge.git
+[submodule "soc/core_soc"]
+	path = soc/core_soc
+	url = https://github.com/ultraembedded/core_soc.git
