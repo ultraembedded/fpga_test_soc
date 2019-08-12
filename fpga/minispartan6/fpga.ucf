@@ -1,0 +1,11 @@
+# Clocks
+NET "clk32_i" PERIOD = 31.25 ns | LOC = "J4"; # 32MHz
+
+# Flash
+NET "flash_cs_o"  LOC="T3"  | IOSTANDARD=LVTTL;
+NET "flash_sck_o" LOC="R11" | IOSTANDARD=LVTTL;
+NET "flash_si_o"  LOC="T10" | IOSTANDARD=LVTTL;
+NET "flash_so_i"  LOC="P10" | IOSTANDARD=LVTTL;
+
+NET "uart_txd_i"  LOC="M7" | IOSTANDARD=LVTTL;
+NET "uart_rxd_o"  LOC="N6" | IOSTANDARD=LVTTL;
