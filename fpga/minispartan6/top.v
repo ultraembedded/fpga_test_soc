@@ -43,6 +43,14 @@ wire [7:0] spi_cs_w;
 fpga_top
 #(
     .CLK_FREQ(32000000)
+   ,.BAUDRATE(1000000)   // SoC UART baud rate
+   ,.UART_SPEED(1000000) // Debug bridge UART baud (should match BAUDRATE)
+   ,.C_SCK_RATIO(50)     // SPI clock divider (SPI_CLK=CLK_FREQ/C_SCK_RATIO)
+`ifdef CPU_SELECT_ARMV6M
+   ,.CPU("armv6m")       // riscv or armv6m
+`else
+   ,.CPU("riscv")        // riscv or armv6m
+`endif
 )
 u_top
 (
