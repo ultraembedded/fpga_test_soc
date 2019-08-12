@@ -14,6 +14,10 @@ module top
     ,output          flash_cs_o
     ,output          flash_si_o
     ,input           flash_so_i
+
+    // GPIO Headers
+    ,inout  [11:0]   porta
+    ,inout  [11:0]   portb
 );
 
 //-----------------------------------------------------------------
@@ -28,17 +32,20 @@ u_rst
     .rst_o(rst)
 );
 
-
 //-----------------------------------------------------------------
 // Core
 //-----------------------------------------------------------------
-wire       dbg_txd_w;
-wire       uart_txd_w;
+wire        dbg_txd_w;
+wire        uart_txd_w;
 
-wire       spi_clk_w;
-wire       spi_so_w;
-wire       spi_si_w;
-wire [7:0] spi_cs_w;
+wire        spi_clk_w;
+wire        spi_so_w;
+wire        spi_si_w;
+wire [7:0]  spi_cs_w;
+
+wire [31:0] gpio_in_w;
+wire [31:0] gpio_out_w;
+wire [31:0] gpio_out_en_w;
 
 fpga_top
 #(
@@ -68,15 +75,41 @@ u_top
     ,.spi_miso_i(spi_so_w)
     ,.spi_cs_o(spi_cs_w)
 
-    ,.gpio_input_i(32'b0)
-    ,.gpio_output_o()
-    ,.gpio_output_enable_o()
+    ,.gpio_input_i(gpio_in_w)
+    ,.gpio_output_o(gpio_out_w)
+    ,.gpio_output_enable_o(gpio_out_en_w)
 );
 
+//-----------------------------------------------------------------
+// SPI Flash
+//-----------------------------------------------------------------
 assign flash_sck_o = spi_clk_w;
 assign flash_si_o  = spi_si_w;
 assign flash_cs_o  = spi_cs_w[0];
 assign spi_so_w    = flash_so_i;
+
+//-----------------------------------------------------------------
+// GPIO (Port A=gpio[11:0],...,Port B=gpio[27:16])
+//-----------------------------------------------------------------
+genvar i;
+generate
+for (i=0; i < 12; i=i+1)
+begin
+    assign porta[i]        = gpio_out_en_w[0+i]  ? gpio_out_w[0+i]  : 1'bz;
+    assign portb[i]        = gpio_out_en_w[16+i] ? gpio_out_w[16+i] : 1'bz;
+
+    assign gpio_in_w[0+i]  = porta[i];
+    assign gpio_in_w[16+i] = portb[i];
+end
+endgenerate
+
+generate
+for (i=12; i < 16; i=i+1)
+begin
+    assign gpio_in_w[0+i]  = 1'b0;
+    assign gpio_in_w[16+i] = 1'b0;
+end
+endgenerate
 
 //-----------------------------------------------------------------
 // UART Tx combine
