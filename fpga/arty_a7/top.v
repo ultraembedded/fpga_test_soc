@@ -14,6 +14,12 @@ module top
     ,output          flash_cs_o
     ,output          flash_si_o
     ,input           flash_so_i
+
+    // Pmod Headers
+    ,inout  [7:0]    ja
+    ,inout  [7:0]    jb
+    ,inout  [7:0]    jc
+    ,inout  [7:0]    jd
 );
 
 //-----------------------------------------------------------------
@@ -43,15 +49,30 @@ u_rst
 //-----------------------------------------------------------------
 // Core
 //-----------------------------------------------------------------
-wire       dbg_txd_w;
-wire       uart_txd_w;
+wire        dbg_txd_w;
+wire        uart_txd_w;
 
-wire       spi_clk_w;
-wire       spi_so_w;
-wire       spi_si_w;
-wire [7:0] spi_cs_w;
+wire        spi_clk_w;
+wire        spi_so_w;
+wire        spi_si_w;
+wire [7:0]  spi_cs_w;
+
+wire [31:0] gpio_in_w;
+wire [31:0] gpio_out_w;
+wire [31:0] gpio_out_en_w;
 
 fpga_top
+#(
+    .CLK_FREQ(50000000)
+   ,.BAUDRATE(1000000)   // SoC UART baud rate
+   ,.UART_SPEED(1000000) // Debug bridge UART baud (should match BAUDRATE)
+   ,.C_SCK_RATIO(50)     // SPI clock divider (SPI_CLK=CLK_FREQ/C_SCK_RATIO)
+`ifdef CPU_SELECT_ARMV6M
+   ,.CPU("armv6m")       // riscv or armv6m
+`else
+   ,.CPU("riscv")        // riscv or armv6m
+`endif
+)
 u_top
 (
      .clk_i(clk)
@@ -68,15 +89,37 @@ u_top
     ,.spi_miso_i(spi_so_w)
     ,.spi_cs_o(spi_cs_w)
 
-    ,.gpio_input_i(32'b0)
-    ,.gpio_output_o()
-    ,.gpio_output_enable_o()
+    ,.gpio_input_i(gpio_in_w)
+    ,.gpio_output_o(gpio_out_w)
+    ,.gpio_output_enable_o(gpio_out_en_w)
 );
 
+//-----------------------------------------------------------------
+// SPI Flash
+//-----------------------------------------------------------------
 assign flash_sck_o = spi_clk_w;
 assign flash_si_o  = spi_si_w;
 assign flash_cs_o  = spi_cs_w[0];
 assign spi_so_w    = flash_so_i;
+
+//-----------------------------------------------------------------
+// GPIO (PMOD JA=gpio[7:0],...,JD=gpio[31:24])
+//-----------------------------------------------------------------
+genvar i;
+generate  
+for (i=0; i < 8; i=i+1)
+begin
+    assign ja[i]           = gpio_out_en_w[0+i]  ? gpio_out_w[0+i]  : 1'bz;
+    assign jb[i]           = gpio_out_en_w[8+i]  ? gpio_out_w[8+i]  : 1'bz;
+    assign jc[i]           = gpio_out_en_w[16+i] ? gpio_out_w[16+i] : 1'bz;
+    assign jd[i]           = gpio_out_en_w[24+i] ? gpio_out_w[24+i] : 1'bz;
+
+    assign gpio_in_w[0+i]  = ja[i];
+    assign gpio_in_w[8+i]  = jb[i];
+    assign gpio_in_w[16+i] = jc[i];
+    assign gpio_in_w[24+i] = jd[i];
+end  
+endgenerate
 
 //-----------------------------------------------------------------
 // UART Tx combine

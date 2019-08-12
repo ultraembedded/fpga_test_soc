@@ -1,0 +1,124 @@
+###############################################################################
+## Params
+###############################################################################
+SRC_DIR      ?= ./
+EXTRA_VFLAGS ?= 
+PROJECT_DIR  ?= project
+PROJECT      ?= fpga
+
+PART_NAME    ?= xc7a35t
+PART_PACKAGE ?= ftg256
+PART_SPEED   ?= 1
+
+ifeq ($(XILINX_VIVADO),)
+$(error "XILINX_VIVADO not set - e.g. export XILINX_VIVADO=/opt/Xilinx/Vivado/2016.3")
+endif
+
+TOOL_PATH    := $(XILINX_VIVADO)/bin/
+
+FPGA_PART    := $(PART_NAME)$(PART_PACKAGE)-$(PART_SPEED)
+
+###############################################################################
+# Rules:
+###############################################################################
+.PRECIOUS: $(PROJECT_DIR)/%.xpr $(PROJECT_DIR)/%.runs/synth_1/%.dcp $(PROJECT_DIR)/%.runs/impl_1/%_routed.dcp $(PROJECT_DIR)/%.bit
+
+all: bitstream
+
+bitstream: $(PROJECT_DIR)/$(PROJECT).bit
+
+clean:
+	rm -rf $(PROJECT_DIR)
+
+$(PROJECT_DIR):
+	@mkdir -p $@
+
+###############################################################################
+# TCL: Project
+###############################################################################
+TCL_FILES += $(PROJECT_DIR)/create_project.tcl
+$(PROJECT_DIR)/create_project.tcl: | $(PROJECT_DIR)
+	@echo "create_project -force -part $(FPGA_PART) $(PROJECT)" > $@
+	@$(foreach _dir,$(SRC_DIR), $(foreach _file,$(wildcard $(_dir)/*.v),echo "add_files -fileset sources_1 $(abspath $(_file)") >> $@;))
+	@$(foreach _dir,$(SRC_DIR), $(foreach _file,$(wildcard $(_dir)/*.xdc),echo "add_files -fileset constrs_1 $(abspath $(_file)") >> $@;))
+	@$(foreach _dir,$(SRC_DIR), $(foreach _file,$(wildcard $(_dir)/*.xci),echo "import_ip $(abspath $(_file)") >> $@;))
+	@echo "set_property verilog_define [list $(EXTRA_VFLAGS)] [get_filesets sources_1]" >> $@
+	@echo "exit" >> $@
+
+###############################################################################
+# TCL: Synth
+###############################################################################
+TCL_FILES += $(PROJECT_DIR)/run_synth.tcl
+$(PROJECT_DIR)/run_synth.tcl: | $(PROJECT_DIR)
+	@echo "open_project $(PROJECT).xpr" > $@
+	@echo "reset_run synth_1" >> $@
+	@echo "launch_runs synth_1" >> $@
+	@echo "wait_on_run synth_1" >> $@
+	@echo "exit" >> $@
+
+###############################################################################
+# TCL: Implementation
+###############################################################################
+TCL_FILES += $(PROJECT_DIR)/run_impl.tcl
+$(PROJECT_DIR)/run_impl.tcl: | $(PROJECT_DIR)
+	@echo "open_project $(PROJECT).xpr" > $@
+	@echo "reset_run impl_1" >> $@
+	@echo "launch_runs impl_1" >> $@
+	@echo "wait_on_run impl_1" >> $@
+	@echo "exit" >> $@
+
+###############################################################################
+# TCL: Bitstream
+###############################################################################
+TCL_FILES += $(PROJECT_DIR)/generate_bit.tcl
+$(PROJECT_DIR)/generate_bit.tcl: | $(PROJECT_DIR)
+	@echo "open_project $(PROJECT).xpr" > $@
+	@echo "open_run impl_1" >> $@
+	@echo "write_bitstream -force $(PROJECT).bit" >> $@
+	@echo "exit" >> $@
+
+###############################################################################
+# TCL: Program bitstream
+###############################################################################
+TCL_FILES += $(PROJECT_DIR)/program.tcl
+$(PROJECT_DIR)/program.tcl: | $(PROJECT_DIR)
+	@echo "open_hw" > $@
+	@echo "connect_hw_server" >> $@
+	@echo "open_hw_target" >> $@
+	@echo "current_hw_device [lindex [get_hw_devices] 0]" >> $@
+	@echo "refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 0]" >> $@
+	@echo "set_property PROBES.FILE {} [lindex [get_hw_devices] 0]" >> $@
+	@echo "set_property PROGRAM.FILE {$(PROJECT).bit} [lindex [get_hw_devices] 0]" >> $@
+	@echo "program_hw_devices [lindex [get_hw_devices] 0]" >> $@
+	@echo "refresh_hw_device [lindex [get_hw_devices] 0]" >> $@
+	@echo "quit" >> $@
+
+###############################################################################
+# Vivado: Create project
+###############################################################################
+$(PROJECT_DIR)/%.xpr: $(TCL_FILES)
+	cd $(PROJECT_DIR); $(TOOL_PATH)/vivado -mode batch -source create_project.tcl
+
+###############################################################################
+# Vivado: Synthesis
+###############################################################################
+$(PROJECT_DIR)/%.runs/synth_1/%.dcp: $(PROJECT_DIR)/%.xpr $(PROJECT_DIR)/run_synth.tcl
+	cd $(PROJECT_DIR); $(TOOL_PATH)/vivado -mode batch -source run_synth.tcl
+
+###############################################################################
+# Vivado: Implementation
+###############################################################################
+$(PROJECT_DIR)/%.runs/impl_1/%_routed.dcp: $(PROJECT_DIR)/%.runs/synth_1/%.dcp $(PROJECT_DIR)/run_impl.tcl
+	cd $(PROJECT_DIR); $(TOOL_PATH)/vivado -mode batch -source run_impl.tcl
+
+###############################################################################
+# Vivado: Create bitstream
+###############################################################################
+$(PROJECT_DIR)/%.bit: $(PROJECT_DIR)/%.runs/impl_1/%_routed.dcp $(PROJECT_DIR)/generate_bit.tcl
+	cd $(PROJECT_DIR); $(TOOL_PATH)/vivado -mode batch -source generate_bit.tcl
+
+###############################################################################
+# Vivado: Run bitstream
+###############################################################################
+run:
+	cd $(PROJECT_DIR); $(TOOL_PATH)/vivado -mode tcl -source program.tcl
