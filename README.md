@@ -7,7 +7,7 @@ A small test SoC for various soft-CPUs (Cortex-M0, RISC-V).
 ## Cloning
 
 This repo contains submodules.  
-Make sure to clone them run the following command;
+Make sure to clone them with the following command;
 
 ```
 git clone --recursive https://github.com/ultraembedded/fpga_test_soc.git
@@ -15,7 +15,7 @@ git clone --recursive https://github.com/ultraembedded/fpga_test_soc.git
 ```
 
 ## Features
-* Support for RISC-V or ARM Cortex-M0
+* Support for RISC-V or ARM Cortex-M0 CPU
 * Load SW via UART/USB serial.
 * Multi-channel timer peripheral.
 * UART peripheral.
@@ -27,17 +27,27 @@ git clone --recursive https://github.com/ultraembedded/fpga_test_soc.git
 
 | Range                     | Description                                         |
 | ------------------------- | --------------------------------------------------- |
-| 0x0000_0000 - 0x00ff_ffff | Peripheral - IRQ controller                         |
-| 0x0100_0000 - 0x01ff_ffff | Peripheral - Timer                                  |
-| 0x0200_0000 - 0x02ff_ffff | Peripheral - UART                                   |
-| 0x0300_0000 - 0x03ff_ffff | Peripheral - SPI                                    |
-| 0x0400_0000 - 0x04ff_ffff | Peripheral - GPIO                                   |
+| 0x0000_0000 - 0x0000_ffff | 64-KB Memory (RISC-V)                               |
+| 0x0000_0000 - 0x0000_7fff | 32-KB Instruction Memory (Cortex-M0)                |
+| 0x2000_0000 - 0x2000_7fff | 32-KB Data Memory (Cortex-M0)                       |
+| 0x9000_0000 - 0x90ff_ffff | Peripheral - IRQ controller                         |
+| 0x9100_0000 - 0x91ff_ffff | Peripheral - Timer                                  |
+| 0x9200_0000 - 0x92ff_ffff | Peripheral - UART                                   |
+| 0x9300_0000 - 0x93ff_ffff | Peripheral - SPI                                    |
+| 0x9400_0000 - 0x94ff_ffff | Peripheral - GPIO                                   |
 
 ## Project Files
+
+This project is constructed from various sub-projects;
+* [CPU - RISC-V](https://github.com/ultraembedded/riscv)
+* [CPU - Cortex-M0 Wrapper](https://github.com/ultraembedded/cortex_m0_wrapper)
+* [Peripherals](https://github.com/ultraembedded/core_soc)
+* [UART -> AXI Debug Bridge](https://github.com/ultraembedded/core_dbg_bridge)
+
 ```
 ├── cpu
 │   ├── cortex_m0
-│   │   ├── src_v
+│   │   └── src_v
 │   │       ├── ahb_dport.v
 │   │       ├── cortexm0ds_logic.v       [NOT SUPPLIED]
 │   │       ├── CORTEXM0INTEGRATION.v    [NOT SUPPLIED]
@@ -137,7 +147,7 @@ git clone --recursive https://github.com/ultraembedded/fpga_test_soc.git
     │       ├── uart_lite_defs.v
     │       └── uart_lite.v
     └── dbg_bridge
-        ├── src_v
+        └── src_v
             ├── dbg_bridge_fifo.v
             ├── dbg_bridge_uart.v
             └── dbg_bridge.v
