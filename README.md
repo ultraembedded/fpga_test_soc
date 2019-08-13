@@ -4,6 +4,8 @@ Github:   [https://github.com/ultraembedded/fpga_test_soc](https://github.com/ul
 
 A small test SoC for various soft-CPUs (Cortex-M0, RISC-V).
 
+![](doc/block_diagram.png)
+
 ## Cloning
 
 This repo contains submodules.  
