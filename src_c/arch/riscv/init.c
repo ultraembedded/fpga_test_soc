@@ -21,7 +21,7 @@ static uint8_t _heap[CONFIG_MALLOC_SIZE];
 void init(void)
 {
     // Setup serial port
-    uartlite_init(CONFIG_UARTLITE_BASE, 0);
+    uartlite_init(CONFIG_UARTLITE_BASE);
 
     // Register serial driver with printf
     printf_register(uartlite_putc);

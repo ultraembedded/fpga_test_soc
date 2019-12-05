@@ -6,6 +6,7 @@ EXTRA_CFLAGS+= -DCPU_KHZ=50000
 
 SRC_DIR      = ./ 
 SRC_DIR     += ./include
+SRC_DIR     += ../soc/core_soc/src_c
 
 # UART driver
 EXTRA_CFLAGS += -DCONFIG_UARTLITE
