@@ -4,8 +4,11 @@
 module top
 (
      input           SYSCLK
+    ,inout           pano_button
     ,output          GMII_RST_N
-    ,output          led_blue
+    ,output          led_red
+    ,inout           led_green
+    ,inout           led_blue
 
     // UART
     ,input           uart_txd_i
@@ -16,14 +19,7 @@ module top
     ,output          flash_cs_o
     ,output          flash_si_o
     ,input           flash_so_i
-
-    // GPIO Headers
-    ,inout  [11:0]   porta
-    ,inout  [11:0]   portb
 );
-
-wire [11:0]   porta;
-wire [11:0]   portb;
 
 // Generate 32 Mhz system clock from 125 Mhz input clock
 wire clk32_i;
@@ -105,7 +101,7 @@ fpga_top
     .CLK_FREQ(32000000)
    ,.BAUDRATE(1000000)   // SoC UART baud rate
    ,.UART_SPEED(1000000) // Debug bridge UART baud (should match BAUDRATE)
-   ,.C_SCK_RATIO(50)     // SPI clock divider (SPI_CLK=CLK_FREQ/C_SCK_RATIO)
+   ,.C_SCK_RATIO(1)      // SPI clock divider (SPI_CLK=CLK_FREQ/C_SCK_RATIO)
 `ifdef CPU_SELECT_ARMV6M
    ,.CPU("armv6m")       // riscv or armv6m
 `else
@@ -142,25 +138,32 @@ assign flash_cs_o  = spi_cs_w[0];
 assign spi_so_w    = flash_so_i;
 
 //-----------------------------------------------------------------
-// GPIO (Port A=gpio[11:0],...,Port B=gpio[27:16])
+// GPIO bits
+// 0: reserved for CPU reset (?)
+// 1: Pano button
+// 2: Output only - red LED
+// 3: In/out - green LED
+// 4: In/out - blue LED
+// 5...31: Not implmented
 //-----------------------------------------------------------------
+
+assign pano_button = gpio_out_en_w[1]  ? gpio_out_w[1]  : 1'bz;
+assign gpio_in_w[1]  = pano_button;
+
+assign led_red = gpio_out_w[2];
+assign gpio_in_w[2]  = led_red;
+
+assign led_green = gpio_out_en_w[3]  ? gpio_out_w[3]  : 1'bz;
+assign gpio_in_w[3]  = led_green;
+
+assign led_blue = gpio_out_en_w[4]  ? gpio_out_w[4]  : 1'bz;
+assign gpio_in_w[4]  = led_blue;
+
 genvar i;
 generate
-for (i=0; i < 12; i=i+1)
+for (i=5; i < 31; i=i+1)
 begin
-    assign porta[i]        = gpio_out_en_w[0+i]  ? gpio_out_w[0+i]  : 1'bz;
-    assign portb[i]        = gpio_out_en_w[16+i] ? gpio_out_w[16+i] : 1'bz;
-
-    assign gpio_in_w[0+i]  = porta[i];
-    assign gpio_in_w[16+i] = portb[i];
-end
-endgenerate
-
-generate
-for (i=12; i < 16; i=i+1)
-begin
-    assign gpio_in_w[0+i]  = 1'b0;
-    assign gpio_in_w[16+i] = 1'b0;
+    assign gpio_in_w[i]  = 1'b0;
 end
 endgenerate
 
@@ -179,8 +182,6 @@ else
 
 // 'OR' two UARTs together
 assign uart_rxd_o  = txd_q;
-
-assign led_blue = uart_rxd_o;
 
 // ODDR2 debug_buf (
 //     .D0(1'b1),

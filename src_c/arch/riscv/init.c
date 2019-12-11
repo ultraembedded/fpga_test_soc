@@ -7,6 +7,10 @@
 #include "irq_ctrl.h"
 #endif
 
+#ifdef CONFIG_SPILITE
+#include "spi_lite.h"
+#endif
+
 #ifdef CONFIG_MALLOC
 #include "malloc.h"
 #endif
@@ -20,11 +24,17 @@ static uint8_t _heap[CONFIG_MALLOC_SIZE];
 //-----------------------------------------------------------------
 void init(void)
 {
+#ifdef CONFIG_UARTLITE
     // Setup serial port
     uartlite_init(CONFIG_UARTLITE_BASE);
+#endif
 
     // Register serial driver with printf
     printf_register(uartlite_putc);
+
+#ifdef CONFIG_SPILITE
+    spi_init(CONFIG_SPILITE_BASE);
+#endif
 
 #ifdef CONFIG_MALLOC
     malloc_init(_heap, CONFIG_MALLOC_SIZE, 0, 0);
