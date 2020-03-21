@@ -1,0 +1,76 @@
+# Clocks
+NET "SYSCLK" PERIOD = 125 MHz HIGH 50% | LOC = "Y13";
+
+# Flash
+NET "flash_cs_o"  LOC="T5"  | IOSTANDARD=LVCMOS33;
+NET "flash_sck_o" LOC="Y21" | IOSTANDARD=LVCMOS33;
+NET "flash_si_o"  LOC="AB20" | IOSTANDARD=LVCMOS33;
+NET "flash_so_i"  LOC="AA20" | IOSTANDARD=LVCMOS33;
+
+# serial cable connected to mini HDMI DDC signals
+NET "uart_txd_i"  LOC="AA21" | IOSTANDARD=LVTTL;        # AKA DDC2_SCK
+NET "uart_rxd_o"  LOC="AB19" | IOSTANDARD=LVTTL;        # AKA DDC2_SDA
+
+############################################################################
+# ULPI Interface
+############################################################################
+# ignore relative timing between the 60MHz USB reference clock and the processing clock CLK_P
+#NET "u_pll/CLKOUT0" TNM_NET = TNM_NET_USB_CLK60G;
+#NET "USB_CLK60G" TNM_NET = "TNM_NET_USB_CLK60G";        # all synchronous elements after BUFG
+#TIMESPEC "TS_USB_CLK60G" = PERIOD "TNM_NET_USB_CLK60G" 16.666 ns HIGH 50%;
+
+#NET  "USB_ULPI_DATA<0>"         LOC = "A7" ;
+#NET  "USB_ULPI_DATA<1>"         LOC = "B8" ;
+#NET  "USB_ULPI_DATA<2>"         LOC = "A8" ;
+#NET  "USB_ULPI_DATA<3>"         LOC = "D6" ;
+#NET  "USB_ULPI_DATA<4>"         LOC = "C6" ;
+#NET  "USB_ULPI_DATA<5>"         LOC = "B6" ;
+#NET  "USB_ULPI_DATA<6>"         LOC = "A6" ;
+#NET  "USB_ULPI_DATA<7>"         LOC = "A4" ;
+#NET  "USB_ULPI_STP"             LOC = "A5" ;
+#NET  "USB_ULPI_NXT"             LOC = "C5" ;
+#NET  "USB_ULPI_DIR"             LOC = "C7" ;
+#NET  "USB_CLK60"                LOC = "C12" ;
+
+#INST "USB_ULPI_DATA<0>" TNM = USB_ULPI_OUT;
+#INST "USB_ULPI_DATA<1>" TNM = USB_ULPI_OUT;
+#INST "USB_ULPI_DATA<2>" TNM = USB_ULPI_OUT;
+#INST "USB_ULPI_DATA<3>" TNM = USB_ULPI_OUT;
+#INST "USB_ULPI_DATA<4>" TNM = USB_ULPI_OUT;
+#INST "USB_ULPI_DATA<5>" TNM = USB_ULPI_OUT;
+#INST "USB_ULPI_DATA<6>" TNM = USB_ULPI_OUT;
+#INST "USB_ULPI_DATA<7>" TNM = USB_ULPI_OUT;
+#INST "USB_ULPI_STP" TNM = USB_ULPI_OUT;
+#TIMEGRP "USB_ULPI_OUT" OFFSET = OUT 8.5 ns AFTER USB_CLK60;
+#INST "USB_ULPI_DATA<0>" TNM = USB_ULPI_IN;
+#INST "USB_ULPI_DATA<1>" TNM = USB_ULPI_IN;
+#INST "USB_ULPI_DATA<2>" TNM = USB_ULPI_IN;
+#INST "USB_ULPI_DATA<3>" TNM = USB_ULPI_IN;
+#INST "USB_ULPI_DATA<4>" TNM = USB_ULPI_IN;
+#INST "USB_ULPI_DATA<5>" TNM = USB_ULPI_IN;
+#INST "USB_ULPI_DATA<6>" TNM = USB_ULPI_IN;
+#INST "USB_ULPI_DATA<7>" TNM = USB_ULPI_IN;
+#INST "USB_ULPI_NXT" TNM = USB_ULPI_IN;
+#INST "USB_ULPI_DIR" TNM = USB_ULPI_IN;
+#TIMEGRP "USB_ULPI_IN" OFFSET = IN 13.666 ns BEFORE USB_CLK60;  #3ns at ULPI PHY output, period 16.6ns
+
+#NET  "USB_ULPI_DATA<*>" IOSTANDARD = LVCMOS33;
+#NET  "USB_ULPI_STP"             IOSTANDARD = LVCMOS33;
+#NET  "USB_ULPI_NXT"             IOSTANDARD = LVCMOS33;
+#NET  "USB_ULPI_DIR"             IOSTANDARD = LVCMOS33;
+#NET  "USB_CLK60"                IOSTANDARD = LVCMOS33;
+
+# 24 Mhz USB3300 clock
+#NET "usb_clk"               LOC = W12 | IOSTANDARD = LVCMOS33;
+
+# Ethernet PHY
+NET "GMII_RST_N" LOC = R11 | IOSTANDARD = LVCMOS33;
+
+# Pano Button LED Output, Active High
+NET "led_red"               LOC = E12 | IOSTANDARD = LVCMOS33;
+NET "led_blue"              LOC = H13 | IOSTANDARD = LVCMOS33;
+NET "led_green"             LOC = F13 | IOSTANDARD = LVCMOS33;
+
+# Pano Button Input, Active Low
+NET "pano_button"           LOC = H12 | IOSTANDARD = LVCMOS33;
+
